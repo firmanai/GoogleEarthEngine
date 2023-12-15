@@ -21,13 +21,27 @@ var landsat_8 = landsat_8
 
 //Menentukan Parameter Visualisasi
 //Menambahkan Layer ke Peta dengan Berbagai Visualisasi
-var visParamsNaturalColor = {bands: ['B4', 'B3', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
-var visParamsColorInfrared = {bands: ['B5', 'B4', 'B3'],min: 0,max: 0.4,gamma: 1.4,};
-var visParamsAgriculture = {bands: ['B6', 'B5', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
-var visParamsShortwaveInfrared = {bands: ['B7', 'B5', 'B4'],min: 0,max: 0.4,gamma: 1.4,};
-var visParamsGeology = {bands: ['B7', 'B6', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
+function createVisParams(bands) {
+  return { bands: bands, min: 0, max: 0.4, gamma: 1.4 };
+}
+
+var visParamsNaturalColor = createVisParams(['B4', 'B3', 'B2']);
+var visParamsColorInfrared = createVisParams(['B5', 'B4', 'B3']);
+var visParamsAgriculture = createVisParams(['B6', 'B5', 'B2']);
+var visParamsShortwaveInfrared = createVisParams(['B7', 'B5', 'B4']);
+var visParamsGeology = createVisParams(['B7', 'B6', 'B2']);
+
+// Menambahkan Layer ke Peta
 Map.addLayer(landsat_8.clip(areaKerja), visParamsNaturalColor, "NaturalColor");
 Map.addLayer(landsat_8.clip(areaKerja), visParamsColorInfrared, "ColorInfrared");
 Map.addLayer(landsat_8.clip(areaKerja), visParamsAgriculture, "Agriculture");
 Map.addLayer(landsat_8.clip(areaKerja), visParamsShortwaveInfrared, "ShortwaveInfrared");
 Map.addLayer(landsat_8.clip(areaKerja), visParamsGeology, "Geology");
+
+// Mengekspor citra ke Google Drive
+Export.image.toDrive({
+  image: landsat_8.clip(areaKerja).visualize(visParamsAgriculture),
+  description: 'Agriculture',
+  scale: 30,
+  region: areaKerja
+});
