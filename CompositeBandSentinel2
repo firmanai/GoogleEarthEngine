@@ -1,0 +1,51 @@
+//https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR
+// Menetapkan pusat peta dan menambahkan lapisan area kerja
+Map.centerObject(areaKerja, 10);
+Map.addLayer(areaKerja);
+
+// Fungsi untuk masking awan dan awan tipis pada citra Sentinel-2
+function maskS2clouds(image) {
+  // Memilih band Quality Assessment (QA60) dari citra Sentinel-2
+  var qa = image.select('QA60');
+
+  // Membuat bitmask untuk awan dan awan tipis
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+
+  // Membentuk mask dengan operasi bitwise dan mengupdate mask pada citra, kemudian dibagi 10000 untuk normalisasi
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+      .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+
+  return image.updateMask(mask).divide(10000);
+}
+
+// Mengambil dataset Sentinel-2A dalam rentang waktu tertentu, memfilter awan, menerapkan fungsi masking, menghitung median, dan memotong citra sesuai area kerja
+var sentinel_dataset = sentinel_2 
+  .filterDate('2019-01-01', '2022-12-12')
+  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+  .map(maskS2clouds)
+  .median()
+  .clip(areaKerja);
+  
+  //Melakukan visualisasi citra sentinel melalui band komposit
+  
+  var Agriculture = sentinel_dataset.select(['B11', 'B8', 'B2']);
+  var Natural_Colour = sentinel_dataset.select(['B4', 'B3', 'B2']);
+  var Color_Infrared = sentinel_dataset.select(['B8', 'B4', 'B3']);
+  var Short_Wave_Infrared = sentinel_dataset.select(['B12', 'B8A', 'B4']);
+  var Geology = sentinel_dataset.select(['B12','B11','B2']);
+  var RGBparam = {min: 0, max: 0.3,};
+  
+  Map.addLayer(Agriculture, RGBparam, 'Agriculture');
+  Map.addLayer(Natural_Colour, RGBparam, 'Natural Colour');
+  Map.addLayer(Color_Infrared, RGBparam, 'Color_Infrared');
+  Map.addLayer(Short_Wave_Infrared, RGBparam, 'Short_Wave_Infrared');
+  Map.addLayer(Geology, RGBparam, 'Geology');
+
+
+Export.image.toDrive({
+ image: Agriculture,
+  description: 'Agriculture',
+  scale: 20,
+  region: areaKerja
+});
