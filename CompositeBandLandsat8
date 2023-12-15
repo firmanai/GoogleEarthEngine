@@ -1,0 +1,33 @@
+//https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C02_T1_TOA
+//Menambahkan Area Kerja ke Peta
+Map.addLayer(areaKerja);
+Map.centerObject(areaKerja, 10);
+//Fungsi maskL8sr untuk Menyaring Awan dan Bayangan Awan:
+function maskL8sr(image) {
+var cloudShadowBitMask = (1 << 3);
+var cloudsBitMask = (1 << 5);
+var qa = image.select('QA_PIXEL');
+var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+.and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+return image.updateMask(mask);
+}
+
+//Memproses Citra Landsat 8
+var landsat_8 = landsat_8
+.filterDate('2019-01-01','2022-12-31')
+.map(maskL8sr)
+.filterBounds(areaKerja)
+.median();
+
+//Menentukan Parameter Visualisasi
+//Menambahkan Layer ke Peta dengan Berbagai Visualisasi
+var visParamsNaturalColor = {bands: ['B4', 'B3', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
+var visParamsColorInfrared = {bands: ['B5', 'B4', 'B3'],min: 0,max: 0.4,gamma: 1.4,};
+var visParamsAgriculture = {bands: ['B6', 'B5', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
+var visParamsShortwaveInfrared = {bands: ['B7', 'B5', 'B4'],min: 0,max: 0.4,gamma: 1.4,};
+var visParamsGeology = {bands: ['B7', 'B6', 'B2'],min: 0,max: 0.4,gamma: 1.4,};
+Map.addLayer(landsat_8.clip(areaKerja), visParamsNaturalColor, "NaturalColor");
+Map.addLayer(landsat_8.clip(areaKerja), visParamsColorInfrared, "ColorInfrared");
+Map.addLayer(landsat_8.clip(areaKerja), visParamsAgriculture, "Agriculture");
+Map.addLayer(landsat_8.clip(areaKerja), visParamsShortwaveInfrared, "ShortwaveInfrared");
+Map.addLayer(landsat_8.clip(areaKerja), visParamsGeology, "Geology");
